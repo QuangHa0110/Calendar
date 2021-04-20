@@ -118,23 +118,23 @@ Cal *create_calendar(char *name_job, int day, int month, int hours)
 // add entry to Schedule
 void add_entry(Schedule *Sche1, Cal *cal1) {}
 // delete a entry which user take input
-Schedule * delete_entry(Schedule *Sche1,int day, int month, int hours)
+void  delete_entry(Schedule *Sche1,int day, int month, int hours)
 {
     if (check_datetime(day, month, hours) == 1)
     {
-        Schedule * current = Sche1;
-        if(Sche1 == NULL) return Sche1;
+        Cal * current = Sche1->phead;
+        if(current == NULL) return;
 
-        while(current->ptail!=NULL){
-            if(current->ptail->day == day && current->ptail->month == month && current->ptail->hours == hours){
-                current = current ->ptail;
-                current->phead == NULL;
-                break;
-            }
-        } 
-    return Sche1;
+       while(current!=NULL){
+           if(current->day == day && current->month == month && current->hours== hours){
+               current = current ->pnext;
+               Sche1->phead = current;
+
+           }
+       }
+   
     }
-    else return Sche1;
+   
 }
 // replace calendar current
 void load_calendar() {}
