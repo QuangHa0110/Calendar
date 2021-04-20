@@ -129,6 +129,7 @@ void  delete_entry(Schedule *Sche1,int day, int month, int hours)
            if(current->day == day && current->month == month && current->hours== hours){
                current = current ->pnext;
                Sche1->phead = current;
+               
 
            }
        }
