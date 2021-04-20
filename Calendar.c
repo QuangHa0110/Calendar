@@ -7,13 +7,13 @@ typedef struct calendar{
     int month;
     int hours;
     struct calendar *pnext;
-} Cal;
-
+}Cal;
 typedef struct schedule{
     Cal *phead,*ptail;
 }Schedule;
 
 void init(Schedule *Sche1){
+    Sche1=NULL;
     Sche1->phead= Sche1->ptail = NULL;
 }
 
@@ -75,130 +75,105 @@ int check_datetime(int day, int month, int hours){
     return 1;
 };
 // to split line of input according format
-
-void split(char *line, char *name_job, int *day, int *month, int *hours)
-{
-    char s[5][1000];
-    int cnt = 0, j = 0;
-    for (int i = 0; i < strlen(line); i++)
-    {
-        if (line[i] == ' ' || line[i] == '\0')
-        {
-            s[cnt][j] = '\0';
-            cnt++;
-            j = 0;
-        }
-        else
-        {
-            s[cnt][j] = line[i];
-            j++;
-        }
-    }
-    char *name;
-    strcpy(name_job, s[0]);
-    puts(name_job);
-    *day = atoi(s[1]);
-    *month = atoi(s[2]);
-    *hours = atoi(s[3]);
-}
-
+void split(char *line, char* name_job, int *day, int *month, int *hours){};
 // input data for add_entry
-void input() {}
-// create a instant calendar
-Cal *create_calendar(char *name_job, int day, int month, int hours)
-{
-    Cal *calendar = (Cal *)malloc(sizeof(Cal));
-    strcpy(calendar->name_job, name_job);
+void input(char opcode,char* name_job, int *day, int*month, int*hours){
 
-    calendar->day = day;
-    calendar->month = month;
-    calendar->hours = hours;
-    return calendar;
+    char * data;
+    // enter data
+    scanf("%c %[^\n]s", &opcode, data);
+    split(data,name_job,day,month,hours);
+    if(check_datetime(*day,*month,*hours) == 0)
+        printf("ERROR !!! datetime is not correctly");
+}
+// create a instant calendar
+Cal *create_calendar(char* name_job, int day, int month, int hours){}
+// compare two datetime
+int datetime_cmp(Cal *c1, Cal *c2){
+    if(c1->month < c2->month)
+        // c1 < c2
+        return -1;
+    else if(c1->month > c2->month)
+        // c1 > c2
+        return 1;
+    else if(c1->day < c2->day)
+            // c1<c2
+            return -1;
+        else if(c1->day > c2->day)
+            // c1> c2
+            return 1;
+        else if(c1->hours < c2->hours)
+            // c1<c2
+            return -1;
+        else if(c1->hours > c2->hours)
+            // c1> c2
+            return 1;
+        else
+            // c1==c2
+            return 0;
 }
 // add entry to Schedule
-void add_entry(Schedule *Sche1, Cal *cal1) {}
+void add_entry(Schedule *Sche1, Cal *cal1){
+    if(Sche1->phead == NULL){
+        Sche1->phead = Sche1->ptail = cal1;
+    }
+    else if( datetime_cmp(Sche1->ptail, cal1) <0 ){
+        Sche1->ptail->pnext = cal1;
+        Sche1->ptail = cal1;
+    }
+    else{
+        Cal* g = (Cal*)malloc(sizeof(Cal));
+        Cal *k;
+        for (k = Sche1->phead; k!= NULL; k->pnext )
+        {
+            if(datetime_cmp(k,cal1) == 0){
+                printf("ERROR !!! There is existed");
+                break;
+            }
+            else if (datetime_cmp(cal1,k) < 0)
+            {
+                cal1->pnext = k;
+                g->pnext = cal1;
+                printf("ADDED SUCCESS !!! ");
+                break;
+            }
+            g = k;
+        }
+    }
+}
 // delete a entry which user take input
-void  delete_entry(Schedule *Sche1,int day, int month, int hours)
-{
-    if (check_datetime(day, month, hours) == 1)
-    {
-        Cal * current = Sche1->phead;
-        if(current == NULL) return;
-
-       while(current!=NULL){
-           if(current->day == day && current->month == month && current->hours== hours){
-               current = current ->pnext;
-               Sche1->phead = current;
-               
-
-           }
-       }
-   
+void delete_entry(int day, int month, int hours){}
+// replace calendar current by file
+void load_calendar(FILE *file_name){
+    Sche1.phead= Sche1.ptail = NULL;
+    while(fgetc(file_name) != EOF)  {
+        char *data = (char*)malloc(100*sizeof(char));
+        fscanf(file_name,"%[^\n]s",data);
+        Cal *c1 = (Cal*)malloc(1* sizeof(Cal));
+        split(data,c1->name_job,c1->day,c1->month,c1->hours);
+        add_entry(&Sche1, c1);
     }
-   
 }
-// replace calendar current
-void load_calendar() {}
 // print calendar current to console
-void output_calendar(Schedule* Sche1)
-{
-    if (Sche1 == NULL)
-        return;
-    Schedule *p = Sche1;
-    while (p->ptail != NULL)
-    {
-        printf("%s ", p->ptail);
-    }
-}
+void output_calendar(){}
 // save a Schedule calendar to a filename
 void save_calendar(FILE *file_name){
-    Cal c1 = Sche1.phead;
-    while (c1.pnext != NULL)
+    Cal *c1 = Sche1.phead;
+    while (c1->pnext != NULL)
     {
-        fprintf(file_name,"%s ",c1.name_job);
-        fprintf(file_name,"%d ",c1.day);
-        fprintf(file_name,"%d ",c1.month);
-        fprintf(file_name,"%d\n",c1.hours);
+        fprintf(file_name,"%s ",c1->name_job);
+        fprintf(file_name,"%d ",c1->day);
+        fprintf(file_name,"%d ",c1->month);
+        fprintf(file_name,"%d\n",c1->hours);
     }
-    
+
 }
 // func run main
-void run()
-{
-    char choose;
-    int check = 0;
-    do
-    {   
-        switch (choose)
-        {
-        case 'A':
-            add_entry();
-            break;
-        case 'D':
-            delete_entry();
-            break;
-        case 'L':
-            output_calendar();
-            break;
-        case 'W':
-            save_calendar();
-            break;
-        case 'O':
-            load_calendar();
-            break;
-        case 'Q':
-            check =1;
-            exit;
-            break;
-        default:
-            check=1;
-            break;
-        }
-    } while (check ==0);
-}
+void run(){}
 
 int main(){
+
     init(&Sche1);
-    
+
     return 0;
-}
+} 
