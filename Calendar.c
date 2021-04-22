@@ -81,12 +81,11 @@ int check_datetime(int day, int month, int hours)
     return 1;
 };
 
-
 // create a instant calendar
 Cal *create_calendar(char *name_job, int day, int month, int hours)
 {
-    Cal *calendar = (Cal *)malloc(sizeof(Cal));
-    calendar->name_job = (char *)malloc(strlen(name_job) * sizeof(char));
+    Cal *calendar = (Cal *)calloc(1, sizeof(Cal));
+    calendar->name_job = (char *)malloc((strlen(name_job) + 1) * sizeof(char));
     strcpy(calendar->name_job, name_job);
     calendar->day = day;
     calendar->month = month;
@@ -119,49 +118,55 @@ int datetime_cmp(Cal *c1, Cal *c2)
         return 0;
 }
 // add entry to Schedule
-void add_entry(Schedule *Sche1, Cal *cal1)
+int add_entry(Schedule *Sche1, Cal *cal1)
 {
     if (Sche1->phead == NULL)
     {
         Sche1->phead = Sche1->ptail = cal1;
         Sche1->phead->pnext = NULL;
         Sche1->ptail->pnext = NULL;
-        printf("ADDED SUCCESS !!! ");
+        printf("ADDED SUCCESS !!!\n");
         fflush(stdin);
+        return 1;
     }
     else if (datetime_cmp(Sche1->phead, cal1) > 0)
     {
         cal1->pnext = Sche1->phead;
         Sche1->phead = cal1;
 
-        printf("ADDED SUCCESS !!! ");
+        printf("ADDED SUCCESS !!!\n");
+
         fflush(stdin);
+        return 1;
     }
     else if (datetime_cmp(Sche1->ptail, cal1) < 0)
     {
         Sche1->ptail->pnext = cal1;
         Sche1->ptail = cal1;
-        printf("ADDED SUCCESS  !!! ");
+        printf("ADDED SUCCESS  !!!\n");
         fflush(stdin);
+        return 1;
     }
     else
     {
-        Cal *k = (Cal *)malloc(sizeof(Cal));
-        Cal *g = (Cal *)malloc(sizeof(Cal));
+        Cal *k;
+        Cal *g;
         for (k = Sche1->phead; k != NULL; k = k->pnext)
         {
             if (datetime_cmp(cal1, k) == 0)
             {
-                printf("This schedule is existed!!!");
+                printf("This schedule is existed!!!\n");
                 fflush(stdin);
+                return 0;
                 break;
             }
             else if (datetime_cmp(cal1, k) < 0)
             {
                 g->pnext = cal1;
                 cal1->pnext = k;
-                printf("ADDED SUCCESS !!! ");
+                printf("ADDED SUCCESS !!!\n");
                 fflush(stdin);
+                return 1;
                 break;
             }
             g = k;
@@ -169,7 +174,7 @@ void add_entry(Schedule *Sche1, Cal *cal1)
     }
     printf("\n");
     fflush(stdin);
-   
+    return 1;
 }
 
 // delete a entry which user take input
@@ -195,8 +200,8 @@ void delete_entry(int day, int month, int hours)
             }
             else
             {
-                Cal *g = (Cal *)malloc(sizeof(Cal));
-                Cal *k = (Cal *)malloc(sizeof(Cal));
+                Cal *g = (Cal *)calloc(1, sizeof(Cal));
+                Cal *k = (Cal *)calloc(1, sizeof(Cal));
                 for (k = Sche1.phead; k != NULL; k = k->pnext)
                 {
                     if (datetime_cmp(k, c1) == 0)
@@ -215,6 +220,7 @@ void delete_entry(int day, int month, int hours)
                 free(g);
                 free(k);
             }
+            free(c1->name_job);
             free(c1);
         }
     }
@@ -226,7 +232,7 @@ void load_calendar(FILE *file_name)
 
     while (getc(file_name) != EOF)
     {
-        char *data = (char *)malloc(1000 * sizeof(char));
+        char *data = (char *)calloc(100, sizeof(char));
         int day, month, hours;
 
         fscanf(file_name, "%s", data);
@@ -245,7 +251,7 @@ void load_calendar(FILE *file_name)
 // print calendar current to console
 void output_calendar()
 {
-    if (Sche1.phead == NULL)
+    if (Sche1.phead == NULL && Sche1.ptail == NULL)
     {
         printf("Empty date!!!!\n");
         fflush(stdin);
@@ -259,7 +265,6 @@ void output_calendar()
             printf("%s on %d.%d at %d\n", s1->name_job, s1->day, s1->month, s1->hours);
             fflush(stdin);
             s1 = s1->pnext;
-
         }
         // return;
     }
@@ -284,11 +289,22 @@ void save_calendar(FILE *file_name)
     printf("SAVE SUCCESS\n");
     fflush(stdin);
 }
+// remove all Schedule
+void removeAll()
+{
+    Cal *current = NULL;
+    while (Sche1.phead != NULL)
+    {
+        current = Sche1.phead->pnext;
+        free(Sche1.phead->name_job);
+        free(Sche1.phead);
+        Sche1.phead = current;
+    }
+}
 // func run main
 void run()
 {
 
-    int check = 0;
     char choose;
 
     while (1)
@@ -296,12 +312,10 @@ void run()
 
         fflush(stdin);
         scanf("%c", &choose);
-        printf("result:\n");
-        char *name_job = (char *)malloc(1000 * sizeof(char));
+        char *name_job = (char *)calloc(1000, sizeof(char));
         int day = 0;
         int month = 0;
         int hours = 0;
-        char *name;
         FILE *file_name;
         switch (choose)
         {
@@ -311,11 +325,17 @@ void run()
             scanf("%s", name_job);
             scanf("%d %d %d", &month, &day, &hours);
             fflush(stdin);
-            if(check_datetime(day, month, hours)==1){
+            if (check_datetime(day, month, hours) == 1)
+            {
                 Cal *new_calendar = create_calendar(name_job, day, month, hours);
-                add_entry(&Sche1, new_calendar);
+                int a = add_entry(&Sche1, new_calendar);
+                if (a == 0)
+                {
+                    free(new_calendar->name_job);
+                    free(new_calendar);
+                }
             }
-           
+
             break;
         case 'D':
             // if choose = 'D', then executes delete a entry with day, month, hours
@@ -343,30 +363,19 @@ void run()
             fclose(file_name);
             break;
         case 'Q':
+            free(name_job);
             printf("GOOD BYE && SEE YOUR AGAIN!!!");
+            removeAll();
             exit(1);
-            break;
-        default:
-            printf("Error\n");
             break;
         }
         free(name_job);
-    }
-}
-void removeAll()
-{
-    while (Sche1.phead != NULL)
-    {
-        Cal *current = Sche1.phead->pnext;
-        free(current);
-        Sche1.phead = current;
     }
 }
 
 int main()
 {
     run();
-    removeAll();
 
     return 0;
 }
